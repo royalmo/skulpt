@@ -1656,11 +1656,16 @@ function generateTurtleModule(_target) {
             offset = getTarget().firstChild ? (-height) + "px" : "0",
             context;
 
+        if (Sk.overlapCanvases) {
+            canvas.style.position = "absolute";
+        } else {
+            canvas.style.position = "relative";
+            canvas.style.setProperty("margin-top", offset);
+        }
+
         canvas.width          = width;
         canvas.height         = height;
-        canvas.style.position = "relative";
         canvas.style.display  = "block";
-        canvas.style.setProperty("margin-top",offset);
         canvas.style.setProperty("z-index", zIndex);
         if (isHidden) {
             canvas.style.display = "none";
