@@ -591,6 +591,64 @@ function generateTurtleModule(_target) {
             this._paper = undefined;
         };
 
+        proto.$pen = function(shown, pendown, pencolor, fillcolor, pensize, speed) {
+            if (shown instanceof Sk.builtin.dict) {
+                shown.$items().forEach(([key, val]) => {
+                    if (!Sk.builtin.checkString(key)) {
+                        throw new Sk.builtin.TypeError("Keywords must be strings");
+                    } 
+                    switch (key) {
+                        case 'shown':
+                            this._shown = val;
+                            break;
+                        case 'pendown':
+                            this._down = val;
+                            break;
+                        case 'pencolor':
+                            this._color = val;
+                            break;
+                        case 'fillcolor':
+                            this._fill = val;
+                            break;
+                        case 'pensize':
+                            this._size = val;
+                            break;
+                        case 'speed':
+                            this._speed = val;
+                            break;
+                    
+                        default:
+                            break;
+                    }
+                });
+            }
+            else {
+                if (typeof shown !== 'undefined') this._shown = shown;
+                if (typeof pendown !== 'undefined') this._down = pendown;
+                if (typeof pencolor !== 'undefined') this._color = pencolor;
+                if (typeof fillcolor !== 'undefined') this._fill = fillcolor;
+                if (typeof pensize !== 'undefined') this._size = pensize;
+                if (typeof speed !== 'undefined') this._speed = speed;
+            }
+
+            let result =  [
+                new Sk.builtin.str('shown'), new Sk.builtin.bool(this._shown),
+                new Sk.builtin.str('pendown'), new Sk.builtin.bool(this._down),
+                new Sk.builtin.str('pencolor'), Types.COLOR(this._color),
+                new Sk.builtin.str('fillcolor'), Types.COLOR(this._fill),
+                new Sk.builtin.str('pensize'), Types.FLOAT(this._size),
+                new Sk.builtin.str('speed'), Types.FLOAT(this._speed),
+            ];
+
+            return result;
+        };
+        proto.$pen.minArgs     = 0;
+        proto.$pen.co_varnames = ["shown", "pendown", "pencolor", "fillcolor",
+            "pensize", "speed"];
+        proto.$pen.returnType = function(value) {
+            return new Sk.builtin.dict(value);
+        };
+
         proto.$degrees = function(fullCircle) {
             fullCircle = (typeof fullCircle === "number") ?
                 Math.abs(fullCircle) :
