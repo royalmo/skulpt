@@ -508,6 +508,10 @@ function generateTurtleModule(_target) {
                     down    : this._down,
                     shown   : this._shown,
                     colorMode : this._colorMode,
+
+                    stretch_wid : this._stretch_wid,
+                    stretch_len : this._stretch_len,
+                    outline : this._outline,
                     context : function() {
                         return self.getPaper();
                     }
@@ -577,6 +581,10 @@ function generateTurtleModule(_target) {
             this._colorMode  = 1.0;
             this._state      = undefined;
 
+            this._stretch_wid = 1.0;
+            this._stretch_len = 1.0;
+            this._outline = 1;
+
             for(var key in this._managers) {
                 this._managers[key].reset();
             }
@@ -589,6 +597,55 @@ function generateTurtleModule(_target) {
 
             removeLayer(this._paper);
             this._paper = undefined;
+        };
+
+        /*
+        turtle.shapesize(stretch_wid=None, stretch_len=None, outline=None)
+        turtle.turtlesize(stretch_wid=None, stretch_len=None, outline=None)
+
+        stretch_wid – positive number
+        stretch_len – positive number
+        outline – positive number
+
+        Return or set the pen’s attributes x/y-stretchfactors and/or outline.
+        Set resizemode to “user”. If and only if resizemode is set to “user”,
+        the turtle will be displayed stretched according to its stretchfactors:
+        stretch_wid is stretchfactor perpendicular to its orientation, stretch_len
+        is stretchfactor in direction of its orientation, outline determines the
+        width of the shape’s outline.
+
+        turtle.shapesize()
+        (1.0, 1.0, 1)
+        turtle.resizemode("user")
+        turtle.shapesize(5, 5, 12)
+        turtle.shapesize()
+        (5, 5, 12)
+        turtle.shapesize(outline=8)
+        turtle.shapesize()
+        (5, 5, 8)
+        */
+        proto.$shapesize = proto.$turtlesize = function (stretch_wid, stretch_len, outline) {
+            if (stretch_wid instanceof Sk.builtin.str) {
+                throw new Sk.builtin.NotImplementedError("Passing a string is not supported (yet)");
+            }
+            else {
+                if (typeof stretch_wid !== 'undefined') this._stretch_wid = stretch_wid;
+                if (typeof stretch_len !== 'undefined') this._stretch_len = stretch_len;
+                if (typeof outline !== 'undefined') this._outline = outline;
+            }
+
+            if (typeof stretch_wid === 'undefined' && typeof stretch_len === 'undefined' && typeof outline === 'undefined') {
+                return [
+                    Types.FLOAT(this._stretch_wid),
+                    Types.FLOAT(this._stretch_len),
+                    Types.FLOAT(this._outline)]
+            }
+            return;
+        };
+        proto.$shapesize.minArgs = proto.$turtlesize.minArgs = 0;
+        proto.$shapesize.co_varnames = proto.$turtlesize.co_varnames = ["stretch_wid", "stretch_len", "outline"];
+        proto.$shapesize.returnType = proto.$turtlesize.returnType = function(value) {
+            return value ? new Sk.builtin.tuple(value) : new Sk.builtin.none.none$;
         };
 
         proto.$pen = function(shown, pendown, pencolor, fillcolor, pensize, speed) {
@@ -1862,8 +1919,8 @@ function generateTurtleModule(_target) {
             world  = getScreen(),
             width  = getWidth(),
             height = getHeight(),
-            xScale = world.xScale,
-            yScale = world.yScale,
+            xScale = world.xScale * state.stretch_wid,
+            yScale = world.yScale * state.stretch_len,
             x, y, bearing;
 
         if (!context) return;
@@ -1886,7 +1943,7 @@ function generateTurtleModule(_target) {
         else {
             context.rotate(bearing);
             context.beginPath();
-            context.lineWidth   = 1;
+            context.lineWidth   = state.outline;
             context.strokeStyle = state.color;
             context.fillStyle   = state.fill;
             context.moveTo(-shape[0][0], shape[0][1]);
