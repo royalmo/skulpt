@@ -512,6 +512,8 @@ function generateTurtleModule(_target) {
                     stretch_wid : this._stretch_wid,
                     stretch_len : this._stretch_len,
                     outline : this._outline,
+                    stamp_count : this._stamp_count,
+                    stamps : this._stamps,
                     context : function() {
                         return self.getPaper();
                     }
@@ -583,7 +585,9 @@ function generateTurtleModule(_target) {
 
             this._stretch_wid = 1.0;
             this._stretch_len = 1.0;
-            this._outline = 1;
+            this._outline     = 1;
+            this._stamp_count = 0;
+            this._stamps      = {};
 
             for(var key in this._managers) {
                 this._managers[key].reset();
@@ -1085,10 +1089,31 @@ function generateTurtleModule(_target) {
 
         proto.$stamp = function() {
             pushUndo(this);
-            return this.addUpdate(function() {
-                drawTurtle(this, this.context());
+
+            this._stamp_count+=1;
+            let new_context = createLayer(100, false, `stamp-id-${this._stamp_count}`);
+            this._stamps[this._stamp_count] = new_context;
+
+            this.addUpdate(function() {
+                drawTurtle(this, new_context);
             }, true);
+
+            return new Sk.builtin.int_(this._stamp_count);
         };
+
+        proto.$clearstamp = function(stamp_id) {
+            pushUndo(this);
+
+            if (!stamp_id || !Object.keys(this._stamps).includes(stamp_id.toString())) {
+                console.warn(`Stamp with id ${stamp_id} does not exist!`);
+                console.log(this._stamps);
+                throw new Sk.builtin.TypeError(`Stamp with id ${stamp_id} does not exist!`);
+            }
+            clearLayer(this._stamps[this._stamp_count]);
+            delete this._stamps[this._stamp_count];
+        }
+        proto.$clearstamp.co_varnames = ["stamp_id"];
+        proto.$clearstamp.minArgs   = 1;
 
         proto.$dot = function(size, color, g, b, a) {
             pushUndo(this);
@@ -1273,6 +1298,9 @@ function generateTurtleModule(_target) {
             newTurtleInstance.instance._bufferSize = this._bufferSize;
             newTurtleInstance.instance._undoBuffer = this._undoBuffer;
 
+            newTurtleInstance.instance._stretch_wid = this._stretch_wid;
+            newTurtleInstance.instance._stretch_len = this._stretch_len;
+            newTurtleInstance.instance._outline     = this._outline;
 
             newTurtleInstance._clonedFrom = this;
 
@@ -1764,7 +1792,7 @@ function generateTurtleModule(_target) {
         ) | 0;
     }
 
-    function createLayer(zIndex, isHidden) {
+    function createLayer(zIndex, isHidden, data_layer_id) {
         var canvas = document.createElement("canvas"),
             width  = getWidth(),
             height = getHeight(),
@@ -1784,6 +1812,10 @@ function generateTurtleModule(_target) {
         canvas.style.setProperty("z-index", zIndex);
         if (isHidden) {
             canvas.style.display = "none";
+        }
+        if (data_layer_id) {
+            // Used mostly to debug
+            canvas.dataset.layer_id = data_layer_id;
         }
 
         getTarget().appendChild(canvas);
@@ -1842,7 +1874,7 @@ function generateTurtleModule(_target) {
         }
 
         undoState  = {};
-        properties = "x y angle radians color fill down filling shown shape size".split(" ");
+        properties = "x y angle radians color fill down filling shown shape size stretch_wid stretch_len outline stamp_count".split(" ");
         for(i = 0; i < properties.length; i++) {
             undoState[properties[i]] = turtle["_" + properties[i]];
         }
@@ -1996,7 +2028,7 @@ function generateTurtleModule(_target) {
         }
 
         context.scale(1,-1);
-        context.fillStyle = this.fill;
+        context.fillStyle = this.color;
         context.fillText(message, this.x, -this.y);
         context.restore();
     }
