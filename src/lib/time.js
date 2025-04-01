@@ -54,6 +54,7 @@ var $builtinmodule = function (name) {
     });
 
     // This is an experimental implementation of time.sleep(), using suspensions
+    // TODO Make Ctrl^C work here
     mod.sleep = new Sk.builtin.func(function(delay) {
         Sk.builtin.pyCheckArgsLen("sleep", arguments.length, 1, 1);
         Sk.builtin.pyCheckType("delay", "float", Sk.builtin.checkNumber(delay));

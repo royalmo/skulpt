@@ -30,7 +30,7 @@ function generateTurtleModule(_target) {
             worldWidth : 0, // if set to 0 it will use config.width
             worldHeight: 0, // if set to 0 it will use config.height
             animate    : true, // enabled/disable all animated rendering
-            bufferSize : 0, // default turtle buffer size
+            bufferSize : 20, // default turtle buffer size
             allowUndo  : true, // enable ability to use the undo buffer
             assets     : {}
         },
