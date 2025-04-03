@@ -652,7 +652,29 @@ function generateTurtleModule(_target) {
             return value ? new Sk.builtin.tuple(value) : new Sk.builtin.none.none$;
         };
 
+        proto.updateSpeed = function(speed) {
+            const speeds = {"fastest":0, "fast":10, "normal":6, "slow":3, "slowest":1};
+            if (speed in speeds) {
+                speed = speeds[speed];
+            }
+            if (typeof(speed) !== "number") {
+                if (typeof(speed) === "string") {
+                    const valid_speeds = Object.keys(speeds).join(", ");
+                    throw new Sk.builtin.TypeError("speed string expected one of " + valid_speeds);
+                }
+                throw new Sk.builtin.TypeError("speed expected a string or number");
+            }
+            if (speed > 0.5 && speed < 10.5) {
+                speed = Sk.builtin.asnum$(Sk.builtin.round(Sk.builtin.assk$(speed)));
+            } else {
+                speed = 0;
+            }
+            this._speed = speed;
+            this._computed_speed = speed * 2;
+        };
+
         proto.$pen = function(shown, pendown, pencolor, fillcolor, pensize, speed) {
+            let changes = {};
             if (shown instanceof Sk.builtin.dict) {
                 shown.$items().forEach(([key, val]) => {
                     if (!Sk.builtin.checkString(key)) {
@@ -661,21 +683,27 @@ function generateTurtleModule(_target) {
                     switch (key) {
                         case 'shown':
                             this._shown = val;
+                            changes.shown = this._shown;
                             break;
                         case 'pendown':
                             this._down = val;
+                            changes.down = this._down;
                             break;
                         case 'pencolor':
                             this._color = val;
+                            changes.color = this._color;
                             break;
                         case 'fillcolor':
                             this._fill = val;
+                            changes.fill = this._fill;
                             break;
                         case 'pensize':
                             this._size = val;
+                            changes.size = this._size;
                             break;
                         case 'speed':
-                            this._speed = val;
+                            this.updateSpeed(val);
+                            changes.speed = this._computed_speed;
                             break;
                     
                         default:
@@ -684,12 +712,34 @@ function generateTurtleModule(_target) {
                 });
             }
             else {
-                if (typeof shown !== 'undefined') this._shown = shown;
-                if (typeof pendown !== 'undefined') this._down = pendown;
-                if (typeof pencolor !== 'undefined') this._color = pencolor;
-                if (typeof fillcolor !== 'undefined') this._fill = fillcolor;
-                if (typeof pensize !== 'undefined') this._size = pensize;
-                if (typeof speed !== 'undefined') this._speed = speed;
+                if (typeof shown !== 'undefined') {
+                    this._shown = shown;
+                    changes.shown = this._shown;
+                }
+                if (typeof pendown !== 'undefined') {
+                    this._down = pendown;
+                    changes.down = this._down;
+                }
+                if (typeof pencolor !== 'undefined') {
+                    this._color = pencolor;
+                    changes.color = this._color;
+                }
+                if (typeof fillcolor !== 'undefined') {
+                    this._fill = fillcolor;
+                    changes.fill = this._fill;
+                }
+                if (typeof pensize !== 'undefined') {
+                    this._size = pensize;
+                    changes.size = this._size;
+                }
+                if (typeof speed !== 'undefined') {
+                    this.updateSpeed(speed);
+                    changes.speed = this._computed_speed;
+                }
+            }
+
+            if (Object.keys(changes).length !== 0) {
+                this.addUpdate(undefined, this._shown || Object.keys(changes).includes('shown'), changes);
             }
 
             let result =  [
